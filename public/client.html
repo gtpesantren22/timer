@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Timer Client</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+
+        #timer {
+            font-size: 3em;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .btn {
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container text-center mt-5">
+        <h1 class="mb-4">WebSocket Timer</h1>
+        <div id="timer" class="text-primary">00:00</div>
+        <div>
+            <button id="startButton" class="btn btn-success">Start Timer</button>
+            <button id="stopButton" class="btn btn-danger">Stop Timer</button>
+            <button id="resetButton" class="btn btn-secondary">Reset Timer</button>
+        </div>
+    </div>
+
+    <!-- WebSocket Client Script -->
+    <script>
+        let socket;
+
+        // Elemen DOM
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const resetButton = document.getElementById('resetButton');
+
+        // Membuka koneksi WebSocket
+        function connectWebSocket() {
+            socket = new WebSocket('ws://192.168.1.7:8081');
+
+            socket.onopen = () => {
+                console.log('Connected to WebSocket server');
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.action === 'updateTimer') {
+                    const minutes = data.minutes.toString().padStart(2, '0');
+                    const seconds = data.seconds.toString().padStart(2, '0');
+                    timerDisplay.textContent = `${minutes}:${seconds}`;
+                } else if (data.action === 'resetTimer') {
+                    timerDisplay.textContent = '00:00'; // Reset tampilan timer
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('Disconnected from WebSocket server');
+            };
+        }
+
+        // Kirim pesan ke server
+        function sendMessage(action) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ action: action }));
+            }
+        }
+
+        // Event listener tombol
+        startButton.addEventListener('click', () => sendMessage('startTimer'));
+        stopButton.addEventListener('click', () => sendMessage('stopTimer'));
+        resetButton.addEventListener('click', () => {
+                sendMessage('resetTimer'); // Kirim pesan reset ke server
+            });
+
+
+
+
+        // Koneksi WebSocket saat halaman dimuat
+        connectWebSocket();
+    </script>
+</body>
+
+</html>
